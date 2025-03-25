@@ -6,6 +6,55 @@ Indexing is a technique used to improve the performance of database queries by a
 ## 2. How Indexing Works
 An index is a separate data structure (e.g., B-Tree, Hash Table) that maintains a mapping between indexed columns and the actual location of records. When a query is executed, the database engine first searches the index instead of scanning the entire table, significantly improving performance.
 
+### Why Does Indexing Improve Performance?
+Without an index, when a query searches for a specific value (e.g., `SELECT * FROM users WHERE name = 'Budi';`), the database must perform a **full table scan**, meaning it checks every row in the table. This is slow for large datasets.
+
+However, with an index, the database can use efficient lookup mechanisms such as B-Trees or Hash Tables, which work as follows:
+
+### Step-by-Step Example:
+#### Without Index (Full Table Scan)
+1. Suppose we have a `users` table with 1,000,000 records.
+2. Running `SELECT * FROM users WHERE name = 'Budi';` means the database has to check all 1,000,000 rows.
+3. The process involves reading each row from disk, comparing the `name` column, and collecting matching records.
+4. This is inefficient and slow, especially for large datasets.
+
+#### With Index (Optimized Search)
+1. We create an index on the `name` column:
+   ```sql
+   CREATE INDEX idx_name ON users(name);
+   ```
+2. The database builds a B-Tree (or Hash Table) structure for the `name` column, storing pointers to actual records.
+3. When we run `SELECT * FROM users WHERE name = 'Budi';`, the database:
+   - Searches the B-Tree, which is structured like a binary search tree.
+   - Finds the location of `Budi` in `O(log N)` time instead of `O(N)`.
+   - Directly retrieves the records instead of scanning the whole table.
+4. This reduces disk I/O and speeds up query execution dramatically.
+
+### How a B-Tree Index is Built
+1. **Sorting the Data:**
+   - The database sorts indexed values (e.g., names) in ascending order.
+   - Example: `Budi, Ucok, Adam, Panjul, Andi, Dita, Zara`.
+
+2. **Creating the Root Node:**
+   - The middle value (`Panjul`) becomes the root.
+   - Left subtree: `Alice, Bob`
+   - Right subtree: `David, Emma`
+
+3. **Building Subtrees:**
+   - Each subtree follows the same principle:
+   ```
+            Panjul
+          /        \
+      Adam          David
+     /    \        /     \
+   Budi   Ucok  Dita     Zara
+  ```
+4. **Searching in the B-Tree:**
+   - To find `Budi`, start from `Panjul`.
+   - Since `Budi < Charlie`, go left to `Bob`.
+   - Since `Budi < Bob`, go left again.
+   - Found `Budi` quickly instead of scanning all rows.
+
 ## 3. Types of Indexing
 ### a. Based on Data Storage & Sorting
 - **Clustered Index**: Sorts and stores data physically in order. Only one per table because the data rows themselves are sorted.
@@ -38,7 +87,7 @@ An index is a separate data structure (e.g., B-Tree, Hash Table) that maintains 
   ```sql
   CREATE INDEX idx_name_age ON employees(name, age);
   ```
-  - Useful for queries like `SELECT * FROM employees WHERE name = 'Alice' AND age = 30;`
+  - Useful for queries like `SELECT * FROM employees WHERE name = 'Budi' AND age = 30;`
 
 ### d. Based on Search Optimization
 - **Full-Text Index**: Optimized for searching text-based data, allowing fast lookups of words within text columns.
