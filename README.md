@@ -37,22 +37,23 @@ However, with an index, the database can use efficient lookup mechanisms such as
 
 2. **Creating the Root Node:**
    - The middle value (`Panjul`) becomes the root.
-   - Left subtree: `Alice, Bob`
-   - Right subtree: `David, Emma`
+   - Left subtree: `Adam, Budi, Ucok`
+   - Right subtree: `Andi, Dita, Zara`
 
 3. **Building Subtrees:**
    - Each subtree follows the same principle:
-   ```
-            Panjul
-          /        \
-      Adam          David
-     /    \        /     \
-   Budi   Ucok  Dita     Zara
-  ```
+```
+        Panjul
+      /        \
+  Adam          David
+  /    \        /     \
+Budi   Ucok  Dita     Zara
+```
+
 4. **Searching in the B-Tree:**
    - To find `Budi`, start from `Panjul`.
-   - Since `Budi < Charlie`, go left to `Bob`.
-   - Since `Budi < Bob`, go left again.
+   - Since `Budi < Panjul`, go left to `Adam`.
+   - Since `Budi < Adam`, go left again.
    - Found `Budi` quickly instead of scanning all rows.
 
 ## 3. Types of Indexing
