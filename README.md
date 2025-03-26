@@ -81,19 +81,58 @@ Indexing improves performance by reducing the number of rows that need to be sca
     - When searching for a specific `order_date`, the database **navigates the B-Tree** to find the row quickly.
     - Range queries (`BETWEEN`, `<`, `>` conditions) are optimized since data is already sorted.
 
-  - **How Clustered Index Works (Finding a Row):**
-    - A clustered index sorts and stores data physically in order. When a query searches for a specific row, the database can efficiently locate it using a B-Tree structure.
-    - Step by step example:
+  - **How Clustered Index Works (Finding a Row)**:
+    A clustered index sorts and stores data physically in order. When a query searches for a specific row, the database can efficiently locate it using a B-Tree structure.
+
+  - **Step-by-Step Example:**
+    Assume we have an `orders` table with a clustered index on `order_date`:
     ```sql
     CREATE CLUSTERED INDEX idx_order ON orders(order_date);
     ```
 
+    1. **How Data is Stored:**
+      With a clustered index, rows are stored physically in the order of `order_date`:
+
+        | order_id | order_date  | customer_name |
+        |----------|------------|---------------|
+        | 101      | 2024-01-02 | Budi         |
+        | 102      | 2024-01-05 | Panjul           |
+        | 103      | 2024-01-08 | Dita       |
+        | 104      | 2024-01-12 | Andi         |
+        | 105      | 2024-01-15 | Adam          |
+
+          The database organizes this in a B-Tree structure:
+          ```
+                  2024-01-08
+                /           \
+          2024-01-02     2024-01-12
+              \            /
+          2024-01-05   2024-01-15
+          ```
+
+    2. **Query Execution (Finding a Row)**
+      ```sql
+      SELECT * FROM orders WHERE order_date = '2024-01-08';
+      ```
+      - The query starts at the root node (`2024-01-08`).
+      - Since `2024-01-08` matches the search value, the database immediately finds the row.
+      - The query returns the corresponding row **without scanning the full table**.
+
+    3. **Query Execution (Range Search)**
+      ```sql
+      SELECT * FROM orders WHERE order_date BETWEEN '2024-01-05' AND '2024-01-12';
+      ```
+      - The search starts at the root node (`2024-01-08`).
+      - It moves left to `2024-01-05` and right to `2024-01-12`.
+      - The database retrieves the range `[2024-01-05, 2024-01-08, 2024-01-12]` efficiently.
+      
 
 - **Non-Clustered Index**: Stores pointers to actual rows. Multiple non-clustered indexes can exist on a table.
   - Example: This creates an index on `name` without affecting row order.
   ```sql
   CREATE INDEX idx_customer ON customers(name);
   ```
+  - 
 
 ### b. Based on Column Uniqueness
 - **Primary Index**: Automatically created for the primary key, ensuring uniqueness.
