@@ -30,7 +30,7 @@ However, with an index, the database can use efficient lookup mechanisms such as
    - Directly retrieves the records instead of scanning the whole table.
 4. This reduces disk I/O and speeds up query execution dramatically.
 
-### How a B-Tree Index is Built
+#### How a B-Tree Index is Built
 1. **Sorting the Data:**
    - The database sorts indexed values (e.g., names) in ascending order.
    - Example: `Budi, Ucok, Adam, Panjul, Andi, Dita, Zara`.
@@ -55,7 +55,7 @@ Budi   Ucok  Dita     Zara
    - Since `Budi < Adam`, go left again.
    - Found `Budi` quickly instead of scanning all rows.
 
-### Example: Hash Index Process
+#### Example: Hash Index Process
 - If a Hash Index is used, the database hashes the `name` values:
   ```
   Hash(Budi) -> Bucket 7
@@ -132,10 +132,9 @@ Indexing improves performance by reducing the number of rows that need to be sca
   ```sql
   CREATE INDEX idx_customer ON customers(name);
   ```
-  - 
-
-### b. Based on Column Uniqueness
-- **Primary Index**: Automatically created for the primary key, ensuring uniqueness.
+  
+  ### b. Based on Column Uniqueness
+  - **Primary Index**: Automatically created for the primary key, ensuring uniqueness.
   ```sql
   CREATE TABLE users (
       id INT PRIMARY KEY,
@@ -154,6 +153,12 @@ Indexing improves performance by reducing the number of rows that need to be sca
   CREATE INDEX idx_name_age ON employees(name, age);
   ```
   - Useful for queries like `SELECT * FROM employees WHERE name = 'Budi' AND age = 30;`
+  - Also effective for order query like `SELECT * FROM employees ORDER BY name, age;`
+  - Best Practice:
+    - Use a composite index only if queries frequently filter using multiple columns in order.
+    - Ensure that the leading column in the index is frequently used in queries.
+    - Avoid indexing too many columns, as it increases index size and affects write performance.
+    - If different query patterns exist, consider separate indexes on individual columns or index reordering.
 
 ### d. Based on Search Optimization
 - **Full-Text Index**: Optimized for searching text-based data, allowing fast lookups of words within text columns.
@@ -163,7 +168,35 @@ Indexing improves performance by reducing the number of rows that need to be sca
   ```sql
   SELECT * FROM products WHERE MATCH(description) AGAINST('laptop');
   ```
-- **Spatial Index**: Used for geospatial data (latitude, longitude), enabling fast geographic searches.
+  **Example:**
+
+  | id | description                                |
+  |----|--------------------------------------------|
+  | 1  | High-performance gaming laptop with SSD.    |
+  | 2  | Affordable business laptop with long battery life. |
+  | 3  | Gaming keyboard with RGB lighting.          |
+
+  When we create a **Full-Text Index**:
+  ```sql
+  CREATE FULLTEXT INDEX idx_description ON products(description);
+  ```
+  👉 The database tokenizes the text into words and builds an inverted index like this:
+  | Word       | Document IDs (Product IDs) |
+  |------------|----------------------------|
+  | gaming     | 1, 3                       |
+  | laptop     | 1, 2                       |
+  | performance| 1                          |
+  | affordable | 2                          |
+  | keyboard   | 3                          |
+
+  ```sql
+  SELECT * FROM products WHERE MATCH(description) AGAINST('laptop');
+  ```
+    - The query engine checks the inverted index for laptop.
+    - It finds Product IDs: 1, 2.
+    - The database retrieves only those rows from the table.
+
+- **Spatial Index** is designed to optimize geospatial queries—such as searching for places near a point (latitude, longitude) or finding all locations within a certain area. Instead of using a traditional B-tree or inverted index, it uses special data structures like R-tree (Region Tree) or QuadTree, which are optimized for multidimensional data.
   ```sql
   CREATE SPATIAL INDEX idx_location ON locations(coordinates);
   ```
