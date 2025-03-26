@@ -49,12 +49,25 @@ However, with an index, the database can use efficient lookup mechanisms such as
   /    \        /     \
 Budi   Ucok  Dita     Zara
 ```
-
 4. **Searching in the B-Tree:**
    - To find `Budi`, start from `Panjul`.
    - Since `Budi < Panjul`, go left to `Adam`.
    - Since `Budi < Adam`, go left again.
    - Found `Budi` quickly instead of scanning all rows.
+
+### Example: Hash Index Process
+- If a Hash Index is used, the database hashes the `name` values:
+  ```
+  Hash(Budi) -> Bucket 7
+  Hash(Panjul) -> Bucket 3
+  Hash(Zara)  -> Bucket 5
+  ```
+- The database directly accesses **Bucket 7**, retrieving `Budi` instantly, let's say the query retreives rows (ID=2, ID=4).
+- A hash index lookup is O(1) time complexity
+- hash index donot support range queries (e.g `BETWEEN name 'A' AND 'C'`)
+
+### Conclusion
+Indexing improves performance by reducing the number of rows that need to be scanned. Instead of searching the entire table, the database leverages optimized data structures like B-Trees and Hash Tables to find records faster, reducing query execution time from **O(N) (linear search)** to **O(log N) (B-Tree search) or O(1) (Hash lookup)**.
 
 ## 3. Types of Indexing
 ### a. Based on Data Storage & Sorting
@@ -63,6 +76,19 @@ Budi   Ucok  Dita     Zara
   ```sql
   CREATE CLUSTERED INDEX idx_order ON orders(order_date);
   ```
+  - **How It Works:**
+    - The database stores rows **physically** in sorted order.
+    - When searching for a specific `order_date`, the database **navigates the B-Tree** to find the row quickly.
+    - Range queries (`BETWEEN`, `<`, `>` conditions) are optimized since data is already sorted.
+
+  - **How Clustered Index Works (Finding a Row):**
+    - A clustered index sorts and stores data physically in order. When a query searches for a specific row, the database can efficiently locate it using a B-Tree structure.
+    - Step by step example:
+    ```sql
+    CREATE CLUSTERED INDEX idx_order ON orders(order_date);
+    ```
+
+
 - **Non-Clustered Index**: Stores pointers to actual rows. Multiple non-clustered indexes can exist on a table.
   - Example: This creates an index on `name` without affecting row order.
   ```sql
