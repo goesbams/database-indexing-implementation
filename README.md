@@ -197,9 +197,46 @@ Indexing improves performance by reducing the number of rows that need to be sca
     - The database retrieves only those rows from the table.
 
 - **Spatial Index** is designed to optimize geospatial queries—such as searching for places near a point (latitude, longitude) or finding all locations within a certain area. Instead of using a traditional B-tree or inverted index, it uses special data structures like R-tree (Region Tree) or QuadTree, which are optimized for multidimensional data.
+
   ```sql
   CREATE SPATIAL INDEX idx_location ON locations(coordinates);
   ```
+  **How data is stored in a Spatial Index?**
+  - Consider a `locations` table with geospatial coordinates (e.g., longitude, latitude):
+
+  | id | name          | coordinates (POINT)       |
+  |----|---------------|---------------------------|
+  | 1  | Jakarta Mall  | POINT(106.8456, -6.2088)   |
+  | 2  | Bandung Cafe  | POINT(107.6191, -6.9175)   |
+  | 3  | Surabaya Park | POINT(112.7508, -7.2575)   |
+
+  When we create a spatial index:
+  ```sql
+  CREATE SPATIAL INDEX idx_location ON locations(coordinates);
+  ```
+  👉 The database organizes the points using an R-tree (a tree-like structure that groups nearby locations).
+
+  **How does R-Tree works?**
+  - Unlike B-trees (which work well for sorted data), R-trees store bounding boxes around points.
+A simplified R-tree might look like:
+
+  ```scss
+    Root
+  ├── [106.8, -6.2] (Jakarta)
+  ├── [107.6, -6.9] (Bandung)
+  ├── [112.7, -7.2] (Surabaya)
+  ```
+  - Instead of scanning all rows, queries only check relevant branches.
+  - Searching for nearby places is much faster than using a WHERE condition without an index.
+
+  **How to use spatial index?**
+  - Find the nearest locations. Example: Find places within 10 km of Jakarta (106.8456, -6.2088).
+  ```sql
+    SELECT * FROM locations 
+    WHERE ST_Distance_Sphere(coordinates, POINT(106.8456, -6.2088)) < 10000;
+  ```
+  - `ST_Distance_Sphere()` calculates the distance in meters (10,000m = 10km).
+  
 
 ### e. Based on Indexing Algorithm
 - **B-Tree Index**: The default index type in most databases, efficient for range queries and sorting.
