@@ -247,7 +247,11 @@ A simplified R-tree might look like:
   ```sql
   CREATE INDEX idx_email_hash ON users USING HASH (email);
   ```
-- **Bitmap Index**: Stores bitmap representations of values, useful for low-cardinality columns (e.g., Yes/No, Male/Female).
+- **Bitmap Index**: a special type of index that stores bitmaps (binary arrays) instead of traditional B-tree structures. It is highly efficient for columns with low-cardinality values (few distinct values), such as:
+  - Gender (Male/Female)
+  - Status (Active/Inactive)
+  - Product Category (Electronics, Furniture, Clothing)
+
   ```sql
   CREATE BITMAP INDEX idx_gender ON employees(gender);
   ```
@@ -310,4 +314,36 @@ SELECT * FROM products WHERE MATCH(description) AGAINST('laptop');
 | Geospatial Data     | Spatial Index       |
 | Categorical data    | Bitmap Index        |
 
+## 8. What is Cardinality?
+Cardinality refers to the number of unique values in a column. It helps determine how an index should be structured and which type of index is most efficient.
+
+### 1. Types of Cardinality
+Cardinality is generally categorized into three levels:
+
+| Cardinality Type  | Description               | Example Column        | Example Data                          |
+|-------------------|---------------------------|-----------------------|---------------------------------------|
+| High Cardinality  | Many unique values        | `email`, `phone_number`, `UUID` | `alice@email.com`, `+62-812-3456-7890` |
+| Medium Cardinality| Some repeated values      | `city`, `job_title`   | `Jakarta`, `Engineer`, `Doctor`       |
+| Low Cardinality   | Few unique values         | `gender`, `status`, `is_active` | `Male/Female`, `Active/Inactive`, `Yes/No` |
+
+### 2. Why is Cardinality Important for Indexing?
+Choosing the right index depends on cardinality:
+
+| Index Type      | Best for                     | Why?                                                                 |
+|-----------------|------------------------------|----------------------------------------------------------------------|
+| **B-tree Index**    | High/Medium Cardinality   | Efficient for unique values (e.g., `WHERE email = 'alice@example.com'`). |
+| **Bitmap Index**    | Low Cardinality           | Fast for repeated values (e.g., `WHERE status = 'Active'`).          |
+| **Hash Index**      | Exact lookups (High Cardinality) | Blazing-fast for `=` comparisons (e.g., `WHERE user_id = 'XYZ123'`). |
+| **Full-Text Index** | Text search              | Enables keyword search in documents (e.g., `WHERE content LIKE '%database%'`). |
+
+### 3. Example: High vs. Low Cardinality
+- Case 1: Searching for an Employee by Email (High Cardinality)
+  ```sql
+  SELECT * FROM employees WHERE email = 'budi@example.com';
+  ```
+  - B-tree Index is ideal because every email is unique.
+
+
 Indexes are a powerful tool for optimizing database performance, but they should be used strategically. Over-indexing can degrade performance instead of improving it. 🚀
+
+
