@@ -255,6 +255,49 @@ A simplified R-tree might look like:
   ```sql
   CREATE BITMAP INDEX idx_gender ON employees(gender);
   ```
+  Instead of storing row pointers like a B-tree, a Bitmap Index stores a sequence of bits (0s and 1s) for each unique value in the indexed column.
+
+  #### 1. How Data is Stored in a Bitmap Index?
+  Let’s say we have an `employees` table:
+
+  | id | name    | gender |
+  |:--:|:-------:|:------:|
+  | 1  | Dita   | Female |
+  | 2  | Adam     | Male   |
+  | 3  | Budi | Male   |
+  | 4  | Zara   | Female |
+  | 5  | Panjul    | Male   |
+
+  **Bitmap Representation for `gender` Column**
+  When we create the bitmap index:
+
+  ```sql
+    CREATE BITMAP INDEX idx_gender ON employees(gender);
+  ```
+
+  👉 The database stores bitmaps for each value (Male and Female):
+
+  | Row ID | Male Bitmap | Female Bitmap |
+  |--------|-------------|---------------|
+  | 1      | 0           | 1             |
+  | 2      | 1           | 0             |
+  | 3      | 1           | 0             |
+  | 4      | 0           | 1             |
+  | 5      | 1           | 0             |
+
+  #### 2. How Bitmap Index Improves Query Performance?
+  - Example 1: Fast Filtering (WHERE gender = 'Male')
+  ```sql
+    SELECT * FROM employees WHERE gender = 'Male';
+  ```
+  💡 Instead of scanning rows, the database quickly reads the Male bitmap (10101) and retrieves only the corresponding row IDs.
+
+  - Example 2: Combining Conditions (WHERE gender = 'Male' AND status = 'Active')
+  ```sql
+    SELECT * FROM employees WHERE gender = 'Male' AND status = 'Active';
+  ```
+  - If status also has a bitmap index, the database performs a bitwise AND operation to filter results instantly.
+  - This is much faster than scanning rows one by one
 
 ### f. Based on Storage (Special Cases)
 - **Covering Index**: Stores all columns needed for a query to avoid accessing the table.
@@ -342,6 +385,11 @@ Choosing the right index depends on cardinality:
   SELECT * FROM employees WHERE email = 'budi@example.com';
   ```
   - B-tree Index is ideal because every email is unique.
+- Case 2: Filtering by Gender (Low Cardinality)
+  ```sql
+  SELECT * FROM employees WHERE gender = 'Male';
+  ```
+  - Bitmap Index is better because there are only 2-3 possible values (Male/Female/Other), and we can use bitwise operations to filter quickly.
 
 
 Indexes are a powerful tool for optimizing database performance, but they should be used strategically. Over-indexing can degrade performance instead of improving it. 🚀
