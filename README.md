@@ -304,7 +304,28 @@ A simplified R-tree might look like:
   ```sql
   CREATE INDEX idx_order_details ON orders(customer_id, order_date, total_price);
   ```
-  - This speeds up queries that request only `customer_id`, `order_date`, and `total_price`.
+    - This speeds up queries that request only `customer_id`, `order_date`, and `total_price`.
+
+    #### 1. When to use?
+    - You only need specific columns from a query (so the database does not need to access the table).
+    - Queries are read-heavy, especially in reporting or analytics.
+    - You want to reduce I/O operations (faster SELECT performance)
+
+    - Example:
+      You frequently run this query:
+      ```sql
+        SELECT customer_id, order_date, total_price FROM orders WHERE customer_id = 123;
+      ```
+      Instead of fetching data from the table, a Covering Index like this:
+      ```sql
+      CREATE INDEX idx_order_details ON orders(customer_id, order_date, total_price);
+      ```
+      Stores all needed data inside the index itself, making queries much faster.
+
+    #### 2. When do not use?
+    - The table is frequently updated (because updating the index is expensive).
+    - Queries need many columns not in the index (which forces table lookups).
+  
 - **Bitmap Index**: Uses bitmaps instead of trees for indexing, making it efficient for categorical data in data warehouses.
   ```sql
   CREATE BITMAP INDEX idx_status ON employees(status);
