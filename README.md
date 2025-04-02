@@ -211,20 +211,30 @@ Adam   Budi  Panjul  Zara
   ```sql
   CREATE SPATIAL INDEX idx_location ON locations(coordinates);
   ```
-  👉 The database organizes the points using an R-tree (a tree-like structure that groups nearby locations).
 
   **How does R-Tree works?**
-  - Unlike B-trees (which work well for sorted data), R-trees store bounding boxes around points.
-A simplified R-tree might look like:
+  - A tree data structure for indexing spatial data like points, rectangles, and polygons.
+  - R-tree group nearby spatial object into **hierarchical bounding box (Minimum Bounding Rectangles or MBRs)**.
+  - A simplified R-tree might look like:
 
-  ```scss
-    Root
-  ├── [106.8, -6.2] (Jakarta)
-  ├── [107.6, -6.9] (Bandung)
-  ├── [112.7, -7.2] (Surabaya)
+  ```less
+     Root
+   ├── Bounding Box A: (106.8, -6.2) to (107.6, -6.9) [Jakarta, Bandung]
+   ├── Bounding Box B: (112.7, -7.2) [Surabaya]
   ```
-  - Instead of scanning all rows, queries only check relevant branches.
-  - Searching for nearby places is much faster than using a WHERE condition without an index.
+  - Jakarta and Bandung are close → Group into Bounding Box A.
+  - Surabaya is far → Placed in Bounding Box B.
+
+  **Searching in an R-Tree (Find Nearby Places)**
+  - Example: Find all locations within 10 km of Jakarta (106.8456, -6.2088).
+  - The root has Bounding Box A (Jakarta & Bandung) and Bounding Box B (Surabaya).
+  - Bounding Box A is closer to Jakarta → Check it first.
+  - Bounding Box B is far away → Skip it (avoiding unnecessary calculations).
+  - Jakarta is inside Bounding Box A → Include Jakarta.
+  - Bandung is also inside Bounding Box A → Calculate distance from Jakarta.
+    - If Bandung is within 10 km, include it.
+    - If Bandung is outside 10 km, ignore it.
+  - The database only calculates distances for locations inside the relevant bounding boxes.
 
   **How to use spatial index?**
   - Find the nearest locations. Example: Find places within 10 km of Jakarta (106.8456, -6.2088).
