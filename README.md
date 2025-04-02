@@ -33,26 +33,26 @@ However, with an index, the database can use efficient lookup mechanisms such as
 #### How a B-Tree Index is Built
 1. **Sorting the Data:**
    - The database sorts indexed values (e.g., names) in ascending order.
-   - Example: `Budi, Ucok, Adam, Panjul, Andi, Dita, Zara`.
+   - Example: `Adam, Andi, Budi, Dita, Panjul, Ucok, Zara`.
 
 2. **Creating the Root Node:**
-   - The middle value (`Panjul`) becomes the root.
-   - Left subtree: `Adam, Budi, Ucok`
-   - Right subtree: `Andi, Dita, Zara`
+   - The middle value (`Dita`) becomes the root.
+   - Left subtree: `Adam, Andi, Budi`
+   - Right subtree: `Panjul, Ucok, Zara`
 
 3. **Building Subtrees:**
    - Each subtree follows the same principle:
 ```
-        Panjul
-      /        \
-  Adam          David
-  /    \        /     \
-Budi   Ucok  Dita     Zara
+         Dita
+       /      \
+   Andi        Ucok
+  /    \       /     \
+Adam   Budi  Panjul  Zara
 ```
 4. **Searching in the B-Tree:**
-   - To find `Budi`, start from `Panjul`.
-   - Since `Budi < Panjul`, go left to `Adam`.
-   - Since `Budi < Adam`, go left again.
+   - To find `Budi`, start from `Dita`.
+   - Since `Budi < Dita`, go left to `Andi`.
+   - Since `Budi > Andi`, go right to `Budi`.
    - Found `Budi` quickly instead of scanning all rows.
 
 #### Example: Hash Index Process
@@ -66,86 +66,83 @@ Budi   Ucok  Dita     Zara
 - A hash index lookup is O(1) time complexity
 - hash index donot support range queries (e.g `BETWEEN name 'A' AND 'C'`)
 
-### Conclusion
-Indexing improves performance by reducing the number of rows that need to be scanned. Instead of searching the entire table, the database leverages optimized data structures like B-Trees and Hash Tables to find records faster, reducing query execution time from **O(N) (linear search)** to **O(log N) (B-Tree search) or O(1) (Hash lookup)**.
-
 ## 3. Types of Indexing
 ### a. Based on Data Storage & Sorting
-- **Clustered Index**: Sorts and stores data physically in order. Only one per table because the data rows themselves are sorted.
-  - Example: If you create a clustered index on `order_date`, the database will store rows in ascending order of `order_date`.
-  ```sql
-  CREATE CLUSTERED INDEX idx_order ON orders(order_date);
-  ```
-  - **How It Works:**
-    - The database stores rows **physically** in sorted order.
-    - When searching for a specific `order_date`, the database **navigates the B-Tree** to find the row quickly.
-    - Range queries (`BETWEEN`, `<`, `>` conditions) are optimized since data is already sorted.
-
-  - **How Clustered Index Works (Finding a Row)**:
-    A clustered index sorts and stores data physically in order. When a query searches for a specific row, the database can efficiently locate it using a B-Tree structure.
-
-  - **Step-by-Step Example:**
-    Assume we have an `orders` table with a clustered index on `order_date`:
+  - **Clustered Index**: Sorts and stores data physically in order. Only one per table because the data rows themselves are sorted.
+    - Example: If you create a clustered index on `order_date`, the database will store rows in ascending order of `order_date`.
     ```sql
     CREATE CLUSTERED INDEX idx_order ON orders(order_date);
     ```
+    - **How It Works:**
+      - The database stores rows **physically** in sorted order.
+      - When searching for a specific `order_date`, the database **navigates the B-Tree** to find the row quickly.
+      - Range queries (`BETWEEN`, `<`, `>` conditions) are optimized since data is already sorted.
 
-    1. **How Data is Stored:**
-      With a clustered index, rows are stored physically in the order of `order_date`:
+    - **How Clustered Index Works (Finding a Row)**:
+      When a query searches for a specific row, the database can efficiently locate it using a B-Tree structure. 
 
-        | order_id | order_date  | customer_name |
-        |----------|------------|---------------|
-        | 101      | 2024-01-02 | Budi         |
-        | 102      | 2024-01-05 | Panjul           |
-        | 103      | 2024-01-08 | Dita       |
-        | 104      | 2024-01-12 | Andi         |
-        | 105      | 2024-01-15 | Adam          |
-
-          The database organizes this in a B-Tree structure:
-          ```
-                  2024-01-08
-                /           \
-          2024-01-02     2024-01-12
-              \            /
-          2024-01-05   2024-01-15
-          ```
-
-    2. **Query Execution (Finding a Row)**
+    - **Step-by-Step Example:**
+      Assume we have an `orders` table with a clustered index on `order_date`:
       ```sql
-      SELECT * FROM orders WHERE order_date = '2024-01-08';
+      CREATE CLUSTERED INDEX idx_order ON orders(order_date);
       ```
-      - The query starts at the root node (`2024-01-08`).
-      - Since `2024-01-08` matches the search value, the database immediately finds the row.
-      - The query returns the corresponding row **without scanning the full table**.
 
-    3. **Query Execution (Range Search)**
-      ```sql
-      SELECT * FROM orders WHERE order_date BETWEEN '2024-01-05' AND '2024-01-12';
-      ```
-      - The search starts at the root node (`2024-01-08`).
-      - It moves left to `2024-01-05` and right to `2024-01-12`.
-      - The database retrieves the range `[2024-01-05, 2024-01-08, 2024-01-12]` efficiently.
-      
+      1. **How Data is Stored:**
+        With a clustered index, rows are stored physically in the order of `order_date`:
 
-- **Non-Clustered Index**: Stores pointers to actual rows. Multiple non-clustered indexes can exist on a table.
-  - Example: This creates an index on `name` without affecting row order.
-  ```sql
-  CREATE INDEX idx_customer ON customers(name);
-  ```
-  
-  ### b. Based on Column Uniqueness
-  - **Primary Index**: Automatically created for the primary key, ensuring uniqueness.
+          | order_id | order_date  | customer_name |
+          |----------|------------|---------------|
+          | 101      | 2024-01-02 | Budi         |
+          | 105      | 2024-01-05 | Panjul           |
+          | 104      | 2024-01-08 | Dita       |
+          | 103      | 2024-01-12 | Andi         |
+          | 102      | 2024-01-15 | Adam          |
+
+            The database organizes this in a B-Tree structure:
+            ```
+                                [ 2024-01-08 ]  
+                                /             \  
+            [ 2024-01-02, 2024-01-05 ]    [ 2024-01-12, 2024-01-15 ]  
+            ```
+
+      2. **Query Execution (Finding a Row)**
+        ```sql
+        SELECT * FROM orders WHERE order_date = '2024-01-12';
+        ```
+        - The query starts at the root node (`2024-01-08`).
+        - Since `2024-01-12 > 2024-01-08`, move to the right.
+        - Match found, return the corresponding now.
+
+      3. **Query Execution (Range Search)**
+        ```sql
+        SELECT * FROM orders WHERE order_date BETWEEN '2024-01-05' AND '2024-01-12';
+        ```
+        - The search starts at the root node (`2024-01-08`).
+        - Since `2024-01-08 > 2024-01-05`, move to the left child.
+        - Search and match `2024-01-05`, so collect it.
+        - Move back to the root, `2024-01-08` match our range, so collect it.
+        - Move to the right child, `[2024-01-12]` match our range, so collect it.
+        - The database retrieves the range `[2024-01-05, 2024-01-08, 2024-01-12]` efficiently.
+        
+
+  - **Non-Clustered Index**: Stores pointers to actual rows. Multiple non-clustered indexes can exist on a table.
+    - Example: This creates an index on `name` without affecting row order.
+    ```sql
+    CREATE INDEX idx_customer ON customers(name);
+    ```
+    
+### b. Based on Column Uniqueness
+  - **Primary Index**: Automatically created for the primary key, ensuring uniqueness (creates a unique, clustered index).
   ```sql
   CREATE TABLE users (
       id INT PRIMARY KEY,
       name VARCHAR(100)
   );
   ```
-  - The `PRIMARY KEY` automatically creates a unique, clustered index.
-- **Unique Index**: Prevents duplicate values in a column but does not have to be a primary key.
-  ```sql
-  CREATE UNIQUE INDEX idx_unique_email ON users(email);
-  ```
+  - **Unique Index**: Prevents duplicate values in a column but does not have to be a primary key.
+    ```sql
+    CREATE UNIQUE INDEX idx_unique_email ON users(email);
+    ```
 
 ### c. Based on Multiple Columns
 - **Composite Index**: Created on multiple columns to optimize queries that filter using multiple conditions.
